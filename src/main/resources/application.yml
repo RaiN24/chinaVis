@@ -1,0 +1,22 @@
+# Server settings  
+server:  
+    port: 8080
+    address: 127.0.0.1
+    
+# SPRING PROFILES  
+spring:         
+    # HTTP ENCODING  
+    http:  
+        encoding.charset: UTF-8  
+        encoding.enable: true  
+        encoding.force: true  
+    mvc:
+        view.prefix: /
+        view.suffix: .html
+        
+    # DATASOURCE  
+    datasource:  
+        driverClass: com.mysql.jdbc.Driver  
+        url: jdbc:mysql://127.0.0.1:3306/china
+        username: root 
+        password: 
