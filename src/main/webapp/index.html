@@ -3,10 +3,17 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>tttt</title>
+	<title>ddd</title>
 	<link rel="stylesheet" href="">
 </head>
+<script src="https://code.jquery.com/jquery-3.2.1.js" integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE=" crossorigin="anonymous"></script>
 <body>
-	
+	<script>
+		var d;
+		$.getJSON("/getMessagesByPhone?phone=10690000567890",function(data){
+			d=data;
+		})
+	</script>
 </body>
+
 </html>
