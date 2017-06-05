@@ -13,4 +13,6 @@ public interface MessageDao {
 	public void insertMessage(Message message);
 	@Select("select * from t_message where phone=#{phone,jdbcType=VARCHAR}")
 	public List<Message> getMessagesByPhone(String phone);
+	@Select("select phone from t_message group by phone order by count(phone) DESC LIMIT 30")
+	public List<String> getAllPhones();
 }

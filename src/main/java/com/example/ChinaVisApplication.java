@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
@@ -84,6 +85,11 @@ public class ChinaVisApplication {
 	private MessageService messageService;
 	@Autowired
 	private MessageDao messageDao;
+	static long minTime=1487779200000L;
+	static double minLng=115.52557373;
+	static double minLat=39.46577454;
+	static double dLng=0.14094283700520146441926925249726;
+	static double dLat=0.10810810810810810810810810810811;
 	@Autowired
 	private TextDao textDao;
 	@RequestMapping("/")
@@ -91,6 +97,7 @@ public class ChinaVisApplication {
 		ModelAndView mv=new ModelAndView("index");
 		return mv;
 	}
+	
 	@RequestMapping("/getMessagesByPhone")
 	public String getMessagesByPhone(@RequestParam("phone") String phone){
 		List<Message> list=messageDao.getMessagesByPhone(phone);
@@ -182,6 +189,80 @@ public class ChinaVisApplication {
 //		dayMessage.put(new MyTimestamp(1487817332000L), 1);
 //		dayMessage.put(new MyTimestamp(1487844263000L), 1);
 //		System.out.println(dayMessage.size());
+//		System.out.println(getPosByJW(116.50196838, 39.93611908));
+//		System.out.println(getPosByJW(116.48497009, 39.8574791));
 		SpringApplication.run(ChinaVisApplication.class, args);
+	}
+	@RequestMapping("/change")
+	public void change(){
+		List<List<String>> cluster=new LinkedList<>();
+		Map<String, int[]> map=new LinkedHashMap<>();
+//		List<String> phones=messageDao.getAllPhones();
+		String phones[]=new String[]{"95588","10656668888"};
+		for(String phone:phones){
+			List<Message> list=messageDao.getMessagesByPhone(phone);
+			int[] time2pos=new int[63*24*6]; //-1为初始值，-2为万能配
+			Arrays.fill(time2pos, -1);
+			for(Message message:list){
+				int index=getIndexByTime(message.getRecitime());
+				int pos=getPosByJW(message.getLng(), message.getLat());
+				if(time2pos[index]==-1){
+					time2pos[index]=pos;
+				}else if(time2pos[index]==-2){
+				}else if(time2pos[index]!=pos){
+					time2pos[index]=-2;
+				}
+			}
+//			System.out.println(phone+":"+Arrays.toString(time2pos));
+			map.put(phone, Arrays.copyOfRange(time2pos, 0, time2pos.length));
+		}
+		System.out.println(Arrays.toString(map.get("10656668888")));
+		System.out.println(Arrays.toString(map.get("95588")));
+//		System.out.println(judge(map.get("10656668888"), map.get("95588")));
+//		for(Map.Entry<String, int[]> set:map.entrySet()){
+//			String phone =set.getKey();
+//			if(cluster.size()<=0){
+//				List<String> newJizhan=new LinkedList<>();
+//				newJizhan.add(phone);
+//				cluster.add(newJizhan);
+//			}else{
+//				boolean isAdd=false;
+//				for(List<String> list:cluster){
+//					if(judge(map.get(list.get(0)), map.get(phone))){
+//						list.add(phone);
+//						isAdd=true;
+//						break;
+//					}
+//				}
+//				if(!isAdd){
+//					List<String> newJizhan=new LinkedList<>();
+//					newJizhan.add(phone);
+//					cluster.add(newJizhan);
+//				}
+//			}
+//		}
+//		for(List<String> list:cluster){	for(String phone:list){
+//				System.out.print(phone+" ");
+//			}
+//			System.out.println();
+//		}
+	}
+	public static boolean judge(int a[],int b[]){
+		for (int i = 0; i < a.length; i++) {
+			if(a[i]!=-1&&a[i]!=-2&&b[i]!=-1&&b[i]!=-2)
+				if(a[i]!=b[i]){
+					System.out.println(i+","+a[i]+","+b[i]);
+					return false;
+				}
+		}
+		return true;
+	}
+	public static int getPosByJW(double lng,double lat){
+		int i=(int) Math.floor((lng-minLng)/dLng);
+		int j=(int) Math.floor((lat-minLat)/dLat);
+		return 14*i+j;
+	}
+	public static int getIndexByTime(Timestamp rtime){
+		return (int) ((rtime.getTime()-minTime)/600000);
 	}
 }
