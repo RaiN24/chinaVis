@@ -227,6 +227,7 @@ public class ChinaVisApplication {
 			}
 			map.put(phone, Arrays.copyOfRange(time2pos, 0, time2pos.length));
 		}
+		System.out.println("map get");
 //		for (int i = 0; i < map.get("10656668888").length; i++) {
 //			System.out.println(Arrays.toString(map.get("10656668888")[i]));
 //		}
