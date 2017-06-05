@@ -85,7 +85,9 @@ public class ChinaVisApplication {
 	private MessageService messageService;
 	@Autowired
 	private MessageDao messageDao;
-	static long minTime=1487779200000L;
+	static long minTime=1487088000000L;
+	static double jdmaxper10min=0.17617854625650183052408656562157;
+	static double wdmaxper10min=0.13513513513513513513513513513514;
 	static double minLng=115.52557373;
 	static double minLat=39.46577454;
 	static double dLng=0.14094283700520146441926925249726;
@@ -191,69 +193,86 @@ public class ChinaVisApplication {
 //		System.out.println(dayMessage.size());
 //		System.out.println(getPosByJW(116.50196838, 39.93611908));
 //		System.out.println(getPosByJW(116.48497009, 39.8574791));
+//		System.out.println(new Timestamp(1487088000000L));
 		SpringApplication.run(ChinaVisApplication.class, args);
 	}
 	@RequestMapping("/change")
 	public void change(){
 		List<List<String>> cluster=new LinkedList<>();
-		Map<String, int[]> map=new LinkedHashMap<>();
-//		List<String> phones=messageDao.getAllPhones();
-		String phones[]=new String[]{"95588","10656668888"};
+		Map<String, double[][]> map=new LinkedHashMap<>();
+		List<String> phones=messageDao.getAllPhones();
+//		String phones[]=new String[]{"95588","10656668888"};
 		for(String phone:phones){
 			List<Message> list=messageDao.getMessagesByPhone(phone);
-			int[] time2pos=new int[63*24*6]; //-1为初始值，-2为万能配
-			Arrays.fill(time2pos, -1);
+			double[][] time2pos=new double[71*24*6][4]; //0jmin 1jmax 2wmin 3wmax
 			for(Message message:list){
-				int index=getIndexByTime(message.getRecitime());
-				int pos=getPosByJW(message.getLng(), message.getLat());
-				if(time2pos[index]==-1){
-					time2pos[index]=pos;
-				}else if(time2pos[index]==-2){
-				}else if(time2pos[index]!=pos){
-					time2pos[index]=-2;
+				int index=getIndexByTime(message.getConntime());
+				double lng=message.getLng();
+				double lat=message.getLat();
+				if(time2pos[index][0]==0){
+					time2pos[index][0]=lng;
+					time2pos[index][1]=lng;
+					time2pos[index][2]=lat;
+					time2pos[index][3]=lat;
+				}else{
+					time2pos[index][0]=Math.min(lng,time2pos[index][0]);
+					time2pos[index][1]=Math.max(lng,time2pos[index][1]);
+					time2pos[index][2]=Math.min(lat,time2pos[index][2]);
+					time2pos[index][3]=Math.max(lat,time2pos[index][3]);
 				}
 			}
-//			System.out.println(phone+":"+Arrays.toString(time2pos));
 			map.put(phone, Arrays.copyOfRange(time2pos, 0, time2pos.length));
 		}
-		System.out.println(Arrays.toString(map.get("10656668888")));
-		System.out.println(Arrays.toString(map.get("95588")));
+//		for (int i = 0; i < map.get("10656668888").length; i++) {
+//			System.out.println(Arrays.toString(map.get("10656668888")[i]));
+//		}
+//		for (int i = 0; i < map.get("95588").length; i++) {
+//			System.out.println(Arrays.toString(map.get("95588")[i]));
+//		}
 //		System.out.println(judge(map.get("10656668888"), map.get("95588")));
-//		for(Map.Entry<String, int[]> set:map.entrySet()){
-//			String phone =set.getKey();
-//			if(cluster.size()<=0){
-//				List<String> newJizhan=new LinkedList<>();
-//				newJizhan.add(phone);
-//				cluster.add(newJizhan);
-//			}else{
-//				boolean isAdd=false;
-//				for(List<String> list:cluster){
-//					if(judge(map.get(list.get(0)), map.get(phone))){
-//						list.add(phone);
-//						isAdd=true;
-//						break;
-//					}
-//				}
-//				if(!isAdd){
-//					List<String> newJizhan=new LinkedList<>();
-//					newJizhan.add(phone);
-//					cluster.add(newJizhan);
-//				}
-//			}
-//		}
-//		for(List<String> list:cluster){	for(String phone:list){
-//				System.out.print(phone+" ");
-//			}
-//			System.out.println();
-//		}
-	}
-	public static boolean judge(int a[],int b[]){
-		for (int i = 0; i < a.length; i++) {
-			if(a[i]!=-1&&a[i]!=-2&&b[i]!=-1&&b[i]!=-2)
-				if(a[i]!=b[i]){
-					System.out.println(i+","+a[i]+","+b[i]);
-					return false;
+		for(Map.Entry<String, double[][]> set:map.entrySet()){
+			String phone =set.getKey();
+			if(cluster.size()<=0){
+				List<String> newJizhan=new LinkedList<>();
+				newJizhan.add(phone);
+				cluster.add(newJizhan);
+			}else{
+				boolean isAdd=false;
+				for(List<String> list:cluster){
+					if(judge(map.get(list.get(0)), map.get(phone))){
+						list.add(phone);
+						isAdd=true;
+						break;
+					}
 				}
+				if(!isAdd){
+					List<String> newJizhan=new LinkedList<>();
+					newJizhan.add(phone);
+					cluster.add(newJizhan);
+				}
+			}
+		}
+		for(List<String> list:cluster){	
+			for(String phone:list){
+				System.out.print(phone+" ");
+			}
+			System.out.println();
+		}
+	}
+	public static boolean judge(double a[][],double b[][]){
+		double jmin=0,jmax=0,wmin=0,wmax=0;
+		for (int i = 0; i < a.length; i++) {
+			if(a[i][0]==0||b[i][0]==0||(a[i][1]-a[i][0])>jdmaxper10min||(b[i][1]-b[i][0])>jdmaxper10min
+					||(a[i][3]-a[i][2])>wdmaxper10min||(b[i][3]-b[i][2])>wdmaxper10min)
+				continue;
+			jmin=Math.min(a[i][0], b[i][0]);
+			jmax=Math.max(a[i][1], b[i][1]);
+			wmin=Math.min(a[i][2], b[i][2]);
+			wmax=Math.max(a[i][3], b[i][3]);
+			if(jmax-jmin>jdmaxper10min||wmax-wmin>wdmaxper10min){
+//				System.out.println(i+","+Arrays.toString(a[i])+","+Arrays.toString(b[i]));
+				return false;
+			}
 		}
 		return true;
 	}
