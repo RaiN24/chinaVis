@@ -63,8 +63,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.example.dao.JizhanDao;
 import com.example.dao.MessageDao;
 import com.example.dao.TextDao;
+import com.example.domain.Jizhan;
 import com.example.domain.Message;
 import com.example.domain.MyDate;
 import com.example.domain.News;
@@ -85,6 +87,8 @@ public class ChinaVisApplication {
 	private MessageService messageService;
 	@Autowired
 	private MessageDao messageDao;
+	@Autowired
+	private JizhanDao jizhanDao;
 	static long minTime=1487088000000L;
 	static double jdmaxper10min=0.17617854625650183052408656562157;
 	static double wdmaxper10min=0.13513513513513513513513513513514;
@@ -252,12 +256,22 @@ public class ChinaVisApplication {
 				}
 			}
 		}
+		System.out.println("start insert");
+		int index=0;
 		for(List<String> list:cluster){	
+			index++;
 			for(String phone:list){
-				System.out.print(phone+" ");
+				Jizhan jizhan=new Jizhan();
+				jizhan.setPhone(phone);
+				jizhan.setJizhan(index);
+				jizhanDao.insert(jizhan);
 			}
-			System.out.println();
+//			for(String phone:list){
+//				System.out.print(phone+" ");
+//			}
+//			System.out.println();
 		}
+		System.out.println("end insert");
 	}
 	public static boolean judge(double a[][],double b[][]){
 		double jmin=0,jmax=0,wmin=0,wmax=0;
