@@ -22,6 +22,10 @@ public interface MessageDao {
 	@Select("select * from t_message where phone=#{phone,jdbcType=VARCHAR} and TO_DAYS(conntime)=TO_DAYS(#{date,jdbcType=TIMESTAMP})")
 	public List<Message> getMessagesByPhoneAndDate(@Param("phone")String phone,@Param("date")Timestamp date);
 	
+	@Select("SELECT * from t_message WHERE phone IN (select phone from t_jizhan where jizhan=#{jizhan}) AND TO_DAYS(conntime)=TO_DAYS(#{date}) ORDER BY conntime")
+	public List<Message> getMessagesByJizhanAndDate(@Param("jizhan")int jizhan,@Param("date")Timestamp date);
+	
+	
 	@Select("select phone from t_phone_message where count>10")
 	public List<String> getAllPhones();
 	
