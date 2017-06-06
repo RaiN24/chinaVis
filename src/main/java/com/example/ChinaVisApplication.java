@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -71,6 +72,7 @@ import com.example.domain.Message;
 import com.example.domain.MyDate;
 import com.example.domain.News;
 import com.example.domain.Text;
+import com.example.domain.TypeNum;
 import com.example.domain.User;
 import com.example.dto.MyTimestamp;
 import com.example.service.MessageService;
@@ -105,7 +107,7 @@ public class ChinaVisApplication {
 	}
 	
 	@RequestMapping("/getMessagesByPhone")
-	public String getMessagesByPhone(@RequestParam("phone") String phone){
+	public String getMessagesByPhone(@RequestParam("phone") String phone){//李接口1
 		List<Message> list=messageDao.getMessagesByPhone(phone);
 		JsonObject result=new JsonObject();
 		Map<String, List<Message>> dayMessage=new HashMap<>();
@@ -200,6 +202,67 @@ public class ChinaVisApplication {
 //		System.out.println(new Timestamp(1487088000000L));
 		SpringApplication.run(ChinaVisApplication.class, args);
 	}
+	@RequestMapping("/getActionByDate")
+	public String getActionByDate(@RequestParam("date") String date){//张接口2
+		JsonObject result=new JsonObject();
+		int start=36,end=36;
+		for (int i = start; i <= end; i++) {
+			List<String> phones=jizhanDao.selectPhones(i);
+			List<Message> jizhanMessage=new LinkedList<>();
+			for(String phone:phones){
+				String time[]=date.split("-");
+				int year=Integer.parseInt(time[0]);
+				int month=Integer.parseInt(time[1]);
+				int day=Integer.parseInt(time[2]);
+				Timestamp timestamp=new Timestamp(year-1900, month-1, day, 0, 0, 0, 0);
+				List<Message> phoneMessages=messageDao.getMessagesByPhoneAndDate(phone, timestamp);
+				jizhanMessage.addAll(phoneMessages);
+			}
+			Collections.sort(jizhanMessage, new Comparator<Message>() {
+				@Override
+				public int compare(Message o1, Message o2) {
+					return (int) (o1.getConntime().getTime()-o2.getConntime().getTime());
+				}
+			});
+			JsonArray jizhanAction=new JsonArray();
+			for(Message message:jizhanMessage){
+				JsonObject oneAction=new JsonObject();
+				Timestamp time=message.getConntime();
+				String conntime =time.getHours()+":"+time.getMinutes()+":"+time.getSeconds();
+				oneAction.addProperty("phone", message.getPhone());
+				oneAction.addProperty("conntime", conntime);
+				oneAction.addProperty("lng", message.getLng());
+				oneAction.addProperty("lat", message.getLat());
+				oneAction.addProperty("type", textDao.getType(message.getMd5()));
+				jizhanAction.add(oneAction);
+			}
+			result.add(""+i, jizhanAction);
+		}
+		return result.toString();
+	}
+	
+	@RequestMapping("/getAllTypeMessage")
+	public String getAllTypeMessage(){//张接口1
+		int start=736748,end=736810;
+		Timestamp base=new Timestamp(1487779200000L);
+		JsonObject result=new JsonObject();
+		for (int i = start; i <= end; i++) {
+			List<TypeNum> list=messageDao.getTypeMessageByDate(i);
+			JsonObject today=new JsonObject();
+			base.setDate(base.getDate()+i-start);
+			String date=(1900+base.getYear())+"-"+(base.getMonth()+1)+"-"+base.getDate();
+			base.setDate(base.getDate()-i+start);
+			int total=0;
+			for (TypeNum typenum : list) {
+				today.addProperty(""+typenum.getType(), typenum.getNum());
+				total+=typenum.getNum();
+			}
+			today.addProperty("total", total);
+			result.add(date, today);
+		}
+		return result.toString();
+	}
+	
 	@RequestMapping("/change")
 	public void change(){
 		List<List<String>> cluster=new LinkedList<>();
@@ -227,7 +290,7 @@ public class ChinaVisApplication {
 			}
 			map.put(phone, Arrays.copyOfRange(time2pos, 0, time2pos.length));
 		}
-		System.out.println("map get");
+//		System.out.println("map get");
 //		for (int i = 0; i < map.get("10656668888").length; i++) {
 //			System.out.println(Arrays.toString(map.get("10656668888")[i]));
 //		}
@@ -257,7 +320,7 @@ public class ChinaVisApplication {
 				}
 			}
 		}
-		System.out.println("start insert");
+//		System.out.println("start insert");
 		int index=0;
 		for(List<String> list:cluster){	
 			index++;
@@ -272,7 +335,7 @@ public class ChinaVisApplication {
 //			}
 //			System.out.println();
 		}
-		System.out.println("end insert");
+//		System.out.println("end insert");
 	}
 	public static boolean judge(double a[][],double b[][]){
 		double jmin=0,jmax=0,wmin=0,wmax=0;
