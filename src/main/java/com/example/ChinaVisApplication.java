@@ -205,7 +205,7 @@ public class ChinaVisApplication {
 	@RequestMapping("/getActionByDate")
 	public String getActionByDate(@RequestParam("date") String date){//张接口2
 		JsonObject result=new JsonObject();
-		int start=36,end=36;
+		int start=1,end=77;
 		for (int i = start; i <= end; i++) {
 			List<String> phones=jizhanDao.selectPhones(i);
 			List<Message> jizhanMessage=new LinkedList<>();
@@ -262,7 +262,18 @@ public class ChinaVisApplication {
 		}
 		return result.toString();
 	}
-	
+	@RequestMapping("/writeType")
+	public void writeType() throws FileNotFoundException{
+		File root = new File("C:/Users/rain/Desktop/type.txt");
+		Scanner x=new Scanner(root);
+		while(x.hasNextLine()){
+			String s=x.nextLine();
+			String ss[]=s.split(",");
+			String md5=ss[0];
+			Integer type=Integer.parseInt(ss[1].trim());
+			textDao.updateType(md5, type);
+		}
+	}
 	@RequestMapping("/change")
 	public void change(){
 		List<List<String>> cluster=new LinkedList<>();
@@ -354,6 +365,7 @@ public class ChinaVisApplication {
 		}
 		return true;
 	}
+	
 	public static int getPosByJW(double lng,double lat){
 		int i=(int) Math.floor((lng-minLng)/dLng);
 		int j=(int) Math.floor((lat-minLat)/dLat);
