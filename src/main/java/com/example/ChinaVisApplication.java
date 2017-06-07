@@ -1,6 +1,7 @@
 package com.example;
 
 import static org.assertj.core.api.Assertions.setMaxElementsForPrinting;
+import static org.assertj.core.api.Assertions.useDefaultRepresentation;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,6 +35,8 @@ import com.google.gson.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.poi.ss.formula.functions.Count;
+import org.apache.poi.ss.formula.functions.Counta;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -70,6 +73,9 @@ import org.springframework.web.servlet.ModelAndView;
 import com.example.dao.JizhanDao;
 import com.example.dao.MessageDao;
 import com.example.dao.TextDao;
+import com.example.dao.TypeAreaTimeDao;
+import com.example.dao.TypeTimeAreaDao;
+import com.example.domain.CountArea;
 import com.example.domain.Jizhan;
 import com.example.domain.Message;
 import com.example.domain.MyDate;
@@ -77,6 +83,7 @@ import com.example.domain.News;
 import com.example.domain.Pos;
 import com.example.domain.Text;
 import com.example.domain.TypeNum;
+import com.example.domain.TypeTimeArea;
 import com.example.domain.TypeTimeLngLat;
 import com.example.domain.User;
 import com.example.dto.MyTimestamp;
@@ -95,6 +102,10 @@ public class ChinaVisApplication {
 	@Autowired
 	private MessageDao messageDao;
 	@Autowired
+	private TypeTimeAreaDao typeTimeAreaDao;
+	@Autowired
+	private TypeAreaTimeDao typeAreaTimeDao;
+	@Autowired
 	private JizhanDao jizhanDao;
 	static long minTime = 1487088000000L;
 	static double jdmaxper10min = 0.17617854625650183052408656562157;
@@ -111,15 +122,83 @@ public class ChinaVisApplication {
 		ModelAndView mv = new ModelAndView("index");
 		return mv;
 	}
-
+	
+	@RequestMapping("/getMessagesByJizhan")
+	public String getMessagesByJizhan(@RequestParam("jizhan") int jizhan) {// 李接口1
+		List<Message> messages=jizhanDao.selectMessageByJizhan(jizhan);
+		JsonObject result=new JsonObject();
+		Map<String, CountArea[][]> dayMessage=new HashMap<>();
+		for(Message message:messages){
+			Timestamp time=message.getRecitime();
+			int index = time.toLocaleString().indexOf(" ");
+			String date = time.toLocaleString().substring(0, index);
+			int hour=time.getHours();
+			int min=time.getMinutes()/10;
+			String area=getAddt(message.getLng(), message.getLat());
+			if(dayMessage.containsKey(date)){
+				CountArea countArea[][]=dayMessage.get(date);
+				if(countArea[hour][min]==null){
+					CountArea demo=new CountArea();
+					demo.setCount(1);
+					Set<String> set=new HashSet<>();
+					set.add(area);
+					demo.setSet(set);
+					countArea[hour][min]=demo;
+				}else{
+					countArea[hour][min].setCount(countArea[hour][min].getCount()+1);
+					countArea[hour][min].getSet().add(area);
+				}
+			}else{
+				CountArea[][] countArea=new CountArea[24][6];
+				countArea[hour][min]=new CountArea();
+				countArea[hour][min].setCount(1);
+				Set<String> set=new HashSet<>();
+				set.add(area);
+				countArea[hour][min].setSet(set);
+				dayMessage.put(date,countArea);
+			}
+		}
+		for(Map.Entry<String, CountArea[][]> set:dayMessage.entrySet()){
+			JsonObject dateMessage=new JsonObject();
+			String date=set.getKey();
+			CountArea[][] countArea=set.getValue();
+			for (int i = 0; i < countArea.length; i++) {
+				JsonObject hourMessage=new JsonObject();
+				int total=0;
+				Set<String> hourArea=new HashSet<>();
+				for (int j = 0; j < countArea[0].length; j++) {
+					JsonObject minMessage=new JsonObject();
+					minMessage.addProperty("count", countArea[i][j].getCount());
+					total+=countArea[i][j].getCount();
+					JsonArray areas=new JsonArray();
+					for(String area:countArea[i][j].getSet()){
+						areas.add(area);
+						hourArea.add(area);
+					}
+					minMessage.add("regions", areas);
+					hourMessage.add(j+"", minMessage);
+				}
+				hourMessage.addProperty("total", total);
+				JsonArray hourRegions=new JsonArray();
+				for(String demo:hourArea){
+					hourRegions.add(demo);
+				}
+				hourMessage.add("regions", hourRegions);
+				dateMessage.add(i+"", hourMessage);
+			}
+			result.add(date, dateMessage);
+		}
+		return result.toString();
+	}
+	
 	@RequestMapping("/getMessagesByPhone")
-	public String getMessagesByPhone(@RequestParam("phone") String phone) {// 李接口1
+	public String getMessagesByPhone(@RequestParam("phone") String phone) {// 李子接口1
 		List<Message> list = messageDao.getMessagesByPhone(phone);
 		JsonObject result = new JsonObject();
 		Map<String, List<Message>> dayMessage = new HashMap<>();
 		for (Message message : list) {
-			Timestamp rtime = message.getRecitime();
-			String day = (1900 + rtime.getYear()) + "-" + (rtime.getMonth() + 1) + "-" + rtime.getDate();
+			Timestamp ctime = message.getConntime();
+			String day = (1900 + ctime.getYear()) + "-" + (ctime.getMonth() + 1) + "-" + ctime.getDate();
 			if (dayMessage.containsKey(day)) {
 				dayMessage.get(day).add(message);
 			} else {
@@ -251,7 +330,34 @@ public class ChinaVisApplication {
 		}
 		return result.toString();
 	}
-
+	@RequestMapping("/writeTypeTimeArea")
+	public void writeTypeTimeArea() {// 静态化李接口2,李接口3
+		String dates[]=new String[]{"2017-2-23","2017-2-24","2017-2-25","2017-2-26","2017-2-27","2017-2-28",
+				"2017-3-01","2017-3-02","2017-3-03","2017-3-04","2017-3-05","2017-3-06","2017-3-07","2017-3-08",
+				"2017-3-09","2017-3-10","2017-3-11","2017-3-12","2017-3-13","2017-3-14","2017-3-16",
+				"2017-3-17","2017-3-18","2017-3-19","2017-3-20","2017-3-21","2017-3-22","2017-3-23","2017-3-24",
+				"2017-3-25","2017-3-26","2017-3-27","2017-3-28","2017-3-29","2017-3-30","2017-3-31","2017-4-01",
+				"2017-4-02","2017-4-03","2017-4-04","2017-4-05","2017-4-06","2017-4-07","2017-4-08","2017-4-09",
+				"2017-4-10","2017-4-11","2017-4-12","2017-4-13","2017-4-14","2017-4-15","2017-4-16","2017-4-17",
+				"2017-4-18","2017-4-19","2017-4-20","2017-4-21","2017-4-22","2017-4-23","2017-4-24",
+				"2017-4-25","2017-4-26"};
+//		String dates[]=new String[]{"2017-3-15"};
+		for(String date:dates){
+			String text=getTypeTimeArea(date);
+			typeTimeAreaDao.insertText(date,text);
+			text=getTypeAreaTime(date);
+			typeAreaTimeDao.insertText(date,text);
+		}
+	}
+	@RequestMapping("/getTypeTimeAreaByDate2")
+	public String getTypeTimeArea2(@RequestParam("date") String date) {// 优化后李接口2
+		return typeTimeAreaDao.getText(date);
+	}
+	@RequestMapping("/getTypeAreaTimeByDate2")
+	public String getTypeAreaTime2(@RequestParam("date") String date) {// 优化后李接口3
+		return typeAreaTimeDao.getText(date);
+	}
+	
 	@RequestMapping("/getTypeTimeAreaByDate")
 	public String getTypeTimeArea(@RequestParam("date") String date) {// 李接口2
 		JsonObject result = new JsonObject();
@@ -287,7 +393,6 @@ public class ChinaVisApplication {
 				JsonObject areaNum=new JsonObject();
 				if(map[i][j]==null)
 					continue;
-				System.out.println(i+" "+j+" "+map[i][j]);
 				for(Map.Entry<String, Integer> set:map[i][j].entrySet()){
 					areaNum.addProperty(set.getKey(), set.getValue());
 				}
@@ -306,7 +411,6 @@ public class ChinaVisApplication {
 		for(Pos pos:list){
 			set.add(getAddt(pos.getLng(), pos.getLat()));
 		}
-		System.out.println(1);
 		for(String area:set){
 			System.out.println(area);
 		}
@@ -348,6 +452,8 @@ public class ChinaVisApplication {
 		}
 		for (int i = 0; i < map.length; i++) {
 			Map<String, int[]> areaTime=map[i];
+			if(areaTime==null)
+				continue;
 			for(Map.Entry<String, int[]> set:areaTime.entrySet()){
 				String area=set.getKey();
 				int[] time=set.getValue();
@@ -528,6 +634,7 @@ public class ChinaVisApplication {
 		}
 		com.google.gson.JsonParser parser = new com.google.gson.JsonParser();
 		JsonObject json = (JsonObject) parser.parse(res);
-		return json.get("addrList").getAsJsonArray().get(0).getAsJsonObject().get("admCode").toString();
+		String result=json.get("addrList").getAsJsonArray().get(0).getAsJsonObject().get("admCode").toString();
+		return result.substring(1, result.length()-1);
 	}
 }

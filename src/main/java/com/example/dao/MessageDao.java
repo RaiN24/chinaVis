@@ -19,7 +19,7 @@ public interface MessageDao {
 	@Insert("insert into t_message(md5,phone,conntime,recitime,lng,lat) values(#{md5},#{phone},#{conntime},#{recitime},#{lng},#{lat})")
 	public void insertMessage(Message message);
 	
-	@Select("select * from t_message where phone=#{phone,jdbcType=VARCHAR} and conntime>'2017-02-15 00:00:00' and conntime<'2017-04-27 00:00:00'")
+	@Select("select * from t_message where phone=#{phone,jdbcType=VARCHAR} and conntime>='2017-02-23 00:00:00' and conntime<'2017-04-27 00:00:00'")
 	public List<Message> getMessagesByPhone(String phone);
 	
 	@Select("select * from t_message where phone=#{phone,jdbcType=VARCHAR} and TO_DAYS(conntime)=TO_DAYS(#{date,jdbcType=TIMESTAMP})")
