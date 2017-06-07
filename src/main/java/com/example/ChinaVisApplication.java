@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -106,7 +107,7 @@ public class ChinaVisApplication {
 		ModelAndView mv = new ModelAndView("index");
 		return mv;
 	}
-
+	
 	@RequestMapping("/getMessagesByPhone")
 	public String getMessagesByPhone(@RequestParam("phone") String phone) {// 李接口1
 		List<Message> list = messageDao.getMessagesByPhone(phone);
@@ -373,5 +374,29 @@ public class ChinaVisApplication {
 
 	public static int getIndexByTime(Timestamp rtime) {
 		return (int) ((rtime.getTime() - minTime) / 600000);
+	}
+	
+	public static String getAddt(double lng, double lat){
+		//lat 小  log  大
+		//参数解释: 纬度,经度 type 001 (100代表道路，010代表POI，001代表门址，111可以同时显示前三项)
+		String urlString = "http://gc.ditu.aliyun.com/regeocoding?l="+lat+","+lng+"&type=010";
+		String res = "";   
+        try {   
+            URL url = new URL(urlString);  
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection)url.openConnection();  
+            conn.setDoOutput(true);  
+            conn.setRequestMethod("POST");  
+            java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream(),"UTF-8"));  
+            String line;  
+           while ((line = in.readLine()) != null) {  
+               res += line+"\n";  
+         }  
+            in.close();  
+        } catch (Exception e) {  
+            System.out.println("error in wapaction,and e is " + e.getMessage());  
+        } 
+        com.google.gson.JsonParser parser=new com.google.gson.JsonParser();
+		JsonObject json=(JsonObject) parser.parse(res);
+        return json.get("addrList").getAsJsonArray().get(0).getAsJsonObject().get("admCode").toString();
 	}
 }
