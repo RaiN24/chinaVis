@@ -377,6 +377,10 @@ public class ChinaVisApplication {
 			typeAreaTimeDao.insertText(date,text);
 		}
 	}
+	@RequestMapping("/getJizhanBitMap")
+	public String getJizhanBitMap(@RequestParam("jizhan") int jizhan) {// 优化后李接口1
+		return jizhanBitMapDao.getText(jizhan);
+	}
 	@RequestMapping("/getTypeTimeAreaByDate2")
 	public String getTypeTimeArea2(@RequestParam("date") String date) {// 优化后李接口2
 		return typeTimeAreaDao.getText(date);

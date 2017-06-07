@@ -9,5 +9,5 @@ public interface JizhanBitMapDao {
 	public void insertText(@Param("jizhan")int jizhan,@Param("bitMap")String bitMap);
 
 	@Select("select bit_map from t_jizhan_bitmap where jizhan=#{jizhan} ")
-	public String getText(String jizhan);
+	public String getText(int jizhan);
 }
