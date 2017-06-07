@@ -11,6 +11,7 @@ import org.apache.ibatis.annotations.Select;
 import org.mockito.internal.verification.Times;
 
 import com.example.domain.Message;
+import com.example.domain.Pos;
 import com.example.domain.TypeNum;
 import com.example.domain.TypeTimeLngLat;
 
@@ -35,4 +36,7 @@ public interface MessageDao {
 	
 	@Select("SELECT getType(md5) as type,count(*) as num FROM t_message WHERE TO_DAYS(recitime)=#{day} GROUP BY type")
 	public List<TypeNum> getTypeMessageByDate(int day);
+	
+	@Select("Select lng,lat from t_message")
+	public List<Pos> selectAllMessage();
 }

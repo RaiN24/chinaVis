@@ -18,12 +18,14 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
@@ -72,6 +74,7 @@ import com.example.domain.Jizhan;
 import com.example.domain.Message;
 import com.example.domain.MyDate;
 import com.example.domain.News;
+import com.example.domain.Pos;
 import com.example.domain.Text;
 import com.example.domain.TypeNum;
 import com.example.domain.TypeTimeLngLat;
@@ -219,7 +222,9 @@ public class ChinaVisApplication {
 			int day = Integer.parseInt(time[2]);
 			Timestamp timestamp = new Timestamp(year - 1900, month - 1, day, 0, 0, 0, 0);
 			List<Message> jizhanMessage = messageDao.getMessagesByJizhanAndDate(i, timestamp);
+			JsonObject jizhanActionAndSend=new JsonObject();
 			JsonArray jizhanAction = new JsonArray();
+			Map<Timestamp,Integer> rtime=new HashMap<>();
 			for (Message message : jizhanMessage) {
 				JsonObject oneAction = new JsonObject();
 				Timestamp ctime = message.getConntime();
@@ -229,10 +234,20 @@ public class ChinaVisApplication {
 				oneAction.addProperty("conntime", conntime);
 				oneAction.addProperty("lng", message.getLng());
 				oneAction.addProperty("lat", message.getLat());
-				oneAction.addProperty("type", textDao.getType(message.getMd5()));// 2分钟
+				rtime.put(message.getRecitime(),textDao.getType(message.getMd5()));
 				jizhanAction.add(oneAction);
 			}
-			result.add("" + i, jizhanAction);
+			jizhanActionAndSend.add("action", jizhanAction);
+			JsonArray jizhanSend=new JsonArray();
+			for(Map.Entry<Timestamp, Integer> set:rtime.entrySet()){
+				JsonObject oneSend=new JsonObject();
+				int index = set.getKey().toLocaleString().indexOf(" ");
+				oneSend.addProperty("time", set.getKey().toLocaleString().substring(index + 1));
+				oneSend.addProperty("type", set.getValue());
+				jizhanSend.add(oneSend);
+			}
+			jizhanActionAndSend.add("send", jizhanSend);
+			result.add("" + i, jizhanActionAndSend);
 		}
 		return result.toString();
 	}
@@ -251,12 +266,17 @@ public class ChinaVisApplication {
 		for(TypeTimeLngLat data:list){
 			int type=data.getType();
 			int time=data.getTime();
+//			String area="hehe";
 			String area=getAddt(data.getLng(), data.getLat());
 			if(map[type][time]==null){
 				map[type][time]=new HashMap<>();
 				map[type][time].put(area, 1);
 			}else{
-				map[type][time].put(area, map[type][time].get(area)+1);
+				if(map[type][time].containsKey(area)){
+					map[type][time].put(area, map[type][time].get(area)+1);
+				}else{
+					map[type][time].put(area, 1);
+				}
 			}
 		}
 		for (int i = 0; i < map.length; i++) {
@@ -265,6 +285,9 @@ public class ChinaVisApplication {
 				one.addProperty("source", i);
 				one.addProperty("target", j);
 				JsonObject areaNum=new JsonObject();
+				if(map[i][j]==null)
+					continue;
+				System.out.println(i+" "+j+" "+map[i][j]);
 				for(Map.Entry<String, Integer> set:map[i][j].entrySet()){
 					areaNum.addProperty(set.getKey(), set.getValue());
 				}
@@ -275,11 +298,71 @@ public class ChinaVisApplication {
 		result.add("links", arr);
 		return result.toString();
 	}
-
+	
+	@RequestMapping("/getAllArea")
+	public void getAllArea(){
+		Set<String> set=new HashSet<>();
+		List<Pos> list=messageDao.selectAllMessage();
+		for(Pos pos:list){
+			set.add(getAddt(pos.getLng(), pos.getLat()));
+		}
+		System.out.println(1);
+		for(String area:set){
+			System.out.println(area);
+		}
+	}
+	
 	@RequestMapping("/getTypeAreaTime")
-	public String getTypeAreaTime() {// 李接口3
+	public String getTypeAreaTime(@RequestParam("date") String date) {// 李接口3
 		JsonObject result = new JsonObject();
-
+		Map<String, int[]>[] map=new HashMap[15];
+		String tt[] = date.split("-");
+		int year = Integer.parseInt(tt[0]);
+		int month = Integer.parseInt(tt[1]);
+		int day = Integer.parseInt(tt[2]);
+		Timestamp timestamp = new Timestamp(year - 1900, month - 1, day, 0, 0, 0, 0);
+		List<TypeTimeLngLat> list=messageDao.getTypeTimeAreaByDate(timestamp);
+		JsonArray arr=new JsonArray();
+		for(TypeTimeLngLat data:list){
+			int type=data.getType();
+			int time=data.getTime();
+			String area=getAddt(data.getLng(), data.getLat());
+			if(map[type]==null){
+				map[type]=new HashMap<>();
+				if(map[type].get(area)==null){
+					int[] timeNum=new int[6];
+					timeNum[time]=1;
+					map[type].put(area, timeNum);
+				}else{
+					map[type].get(area)[time]+=1;
+				}
+			}else{
+				if(map[type].get(area)==null){
+					int[] timeNum=new int[6];
+					timeNum[time]=1;
+					map[type].put(area, timeNum);
+				}else{
+					map[type].get(area)[time]+=1;
+				}
+			}
+		}
+		for (int i = 0; i < map.length; i++) {
+			Map<String, int[]> areaTime=map[i];
+			for(Map.Entry<String, int[]> set:areaTime.entrySet()){
+				String area=set.getKey();
+				int[] time=set.getValue();
+				JsonObject one=new JsonObject();
+				one.addProperty("source", i);
+				one.addProperty("target", area);
+				JsonObject timeNum=new JsonObject();
+				for (int j = 0; j < time.length; j++) {
+					timeNum.addProperty(j+"", time[j]);
+				}
+				one.add("value", timeNum);
+				arr.add(one);
+			}
+		}
+		result.add("links", arr);
 		return result.toString();
 	}
 
