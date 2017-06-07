@@ -8,9 +8,11 @@ import java.util.Map;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.mockito.internal.verification.Times;
 
 import com.example.domain.Message;
 import com.example.domain.TypeNum;
+import com.example.domain.TypeTimeLngLat;
 
 public interface MessageDao {
 	@Insert("insert into t_message(md5,phone,conntime,recitime,lng,lat) values(#{md5},#{phone},#{conntime},#{recitime},#{lng},#{lat})")
@@ -25,6 +27,8 @@ public interface MessageDao {
 	@Select("SELECT * from t_message WHERE phone IN (select phone from t_jizhan where jizhan=#{jizhan}) AND TO_DAYS(conntime)=TO_DAYS(#{date}) ORDER BY conntime")
 	public List<Message> getMessagesByJizhanAndDate(@Param("jizhan")int jizhan,@Param("date")Timestamp date);
 	
+	@Select("SELECT getType(md5) AS type,FLOOR(hour(conntime)/4) AS time,lng,lat from t_message WHERE TO_DAYS(conntime)=TO_DAYS(#{date})")
+	public List<TypeTimeLngLat> getTypeTimeAreaByDate(Timestamp date);
 	
 	@Select("select phone from t_phone_message where count>10")
 	public List<String> getAllPhones();

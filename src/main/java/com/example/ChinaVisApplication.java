@@ -74,6 +74,7 @@ import com.example.domain.MyDate;
 import com.example.domain.News;
 import com.example.domain.Text;
 import com.example.domain.TypeNum;
+import com.example.domain.TypeTimeLngLat;
 import com.example.domain.User;
 import com.example.dto.MyTimestamp;
 import com.example.service.MessageService;
@@ -107,7 +108,7 @@ public class ChinaVisApplication {
 		ModelAndView mv = new ModelAndView("index");
 		return mv;
 	}
-	
+
 	@RequestMapping("/getMessagesByPhone")
 	public String getMessagesByPhone(@RequestParam("phone") String phone) {// 李接口1
 		List<Message> list = messageDao.getMessagesByPhone(phone);
@@ -233,6 +234,52 @@ public class ChinaVisApplication {
 			}
 			result.add("" + i, jizhanAction);
 		}
+		return result.toString();
+	}
+
+	@RequestMapping("/getTypeTimeAreaByDate")
+	public String getTypeTimeArea(@RequestParam("date") String date) {// 李接口2
+		JsonObject result = new JsonObject();
+		Map<String, Integer>[][] map=new HashMap[15][6];
+		String tt[] = date.split("-");
+		int year = Integer.parseInt(tt[0]);
+		int month = Integer.parseInt(tt[1]);
+		int day = Integer.parseInt(tt[2]);
+		Timestamp timestamp = new Timestamp(year - 1900, month - 1, day, 0, 0, 0, 0);
+		List<TypeTimeLngLat> list=messageDao.getTypeTimeAreaByDate(timestamp);
+		JsonArray arr=new JsonArray();
+		for(TypeTimeLngLat data:list){
+			int type=data.getType();
+			int time=data.getTime();
+			String area=getAddt(data.getLng(), data.getLat());
+			if(map[type][time]==null){
+				map[type][time]=new HashMap<>();
+				map[type][time].put(area, 1);
+			}else{
+				map[type][time].put(area, map[type][time].get(area)+1);
+			}
+		}
+		for (int i = 0; i < map.length; i++) {
+			for (int j = 0; j < map[0].length; j++) {
+				JsonObject one=new JsonObject();
+				one.addProperty("source", i);
+				one.addProperty("target", j);
+				JsonObject areaNum=new JsonObject();
+				for(Map.Entry<String, Integer> set:map[i][j].entrySet()){
+					areaNum.addProperty(set.getKey(), set.getValue());
+				}
+				one.add("value", areaNum);
+				arr.add(one);
+			}
+		}
+		result.add("links", arr);
+		return result.toString();
+	}
+
+	@RequestMapping("/getTypeAreaTime")
+	public String getTypeAreaTime() {// 李接口3
+		JsonObject result = new JsonObject();
+
 		return result.toString();
 	}
 
@@ -375,28 +422,29 @@ public class ChinaVisApplication {
 	public static int getIndexByTime(Timestamp rtime) {
 		return (int) ((rtime.getTime() - minTime) / 600000);
 	}
-	
-	public static String getAddt(double lng, double lat){
-		//lat 小  log  大
-		//参数解释: 纬度,经度 type 001 (100代表道路，010代表POI，001代表门址，111可以同时显示前三项)
-		String urlString = "http://gc.ditu.aliyun.com/regeocoding?l="+lat+","+lng+"&type=010";
-		String res = "";   
-        try {   
-            URL url = new URL(urlString);  
-            java.net.HttpURLConnection conn = (java.net.HttpURLConnection)url.openConnection();  
-            conn.setDoOutput(true);  
-            conn.setRequestMethod("POST");  
-            java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream(),"UTF-8"));  
-            String line;  
-           while ((line = in.readLine()) != null) {  
-               res += line+"\n";  
-         }  
-            in.close();  
-        } catch (Exception e) {  
-            System.out.println("error in wapaction,and e is " + e.getMessage());  
-        } 
-        com.google.gson.JsonParser parser=new com.google.gson.JsonParser();
-		JsonObject json=(JsonObject) parser.parse(res);
-        return json.get("addrList").getAsJsonArray().get(0).getAsJsonObject().get("admCode").toString();
+
+	public static String getAddt(double lng, double lat) {
+		// lat 小 log 大
+		// 参数解释: 纬度,经度 type 001 (100代表道路，010代表POI，001代表门址，111可以同时显示前三项)
+		String urlString = "http://gc.ditu.aliyun.com/regeocoding?l=" + lat + "," + lng + "&type=010";
+		String res = "";
+		try {
+			URL url = new URL(urlString);
+			java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+			conn.setDoOutput(true);
+			conn.setRequestMethod("POST");
+			java.io.BufferedReader in = new java.io.BufferedReader(
+					new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
+			String line;
+			while ((line = in.readLine()) != null) {
+				res += line + "\n";
+			}
+			in.close();
+		} catch (Exception e) {
+			System.out.println("error in wapaction,and e is " + e.getMessage());
+		}
+		com.google.gson.JsonParser parser = new com.google.gson.JsonParser();
+		JsonObject json = (JsonObject) parser.parse(res);
+		return json.get("addrList").getAsJsonArray().get(0).getAsJsonObject().get("admCode").toString();
 	}
 }
