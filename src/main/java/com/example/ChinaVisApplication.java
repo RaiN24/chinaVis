@@ -128,12 +128,21 @@ public class ChinaVisApplication {
 		List<Message> messages=jizhanDao.selectMessageByJizhan(jizhan);
 		JsonObject result=new JsonObject();
 		Map<String, CountArea[][]> dayMessage=new HashMap<>();
+		Map<String, boolean[]> judge=new HashMap<>();
+		System.out.println(messages.size());
 		for(Message message:messages){
 			Timestamp time=message.getRecitime();
 			int index = time.toLocaleString().indexOf(" ");
 			String date = time.toLocaleString().substring(0, index);
 			int hour=time.getHours();
 			int min=time.getMinutes()/10;
+			if(judge.get(date)==null){
+				boolean b[]=new boolean[24];
+				b[hour]=true;
+				judge.put(date, b);
+			}else{
+				judge.get(date)[hour]=true;
+			}
 			String area=getAddt(message.getLng(), message.getLat());
 			if(dayMessage.containsKey(date)){
 				CountArea countArea[][]=dayMessage.get(date);
@@ -163,10 +172,14 @@ public class ChinaVisApplication {
 			String date=set.getKey();
 			CountArea[][] countArea=set.getValue();
 			for (int i = 0; i < countArea.length; i++) {
+				if(!judge.get(date)[i])
+					continue;
 				JsonObject hourMessage=new JsonObject();
 				int total=0;
 				Set<String> hourArea=new HashSet<>();
 				for (int j = 0; j < countArea[0].length; j++) {
+					if(countArea[i][j]==null)
+						continue;
 					JsonObject minMessage=new JsonObject();
 					minMessage.addProperty("count", countArea[i][j].getCount());
 					total+=countArea[i][j].getCount();
@@ -178,6 +191,8 @@ public class ChinaVisApplication {
 					minMessage.add("regions", areas);
 					hourMessage.add(j+"", minMessage);
 				}
+				if(total==0) //该小时没有短信
+					continue;
 				hourMessage.addProperty("total", total);
 				JsonArray hourRegions=new JsonArray();
 				for(String demo:hourArea){
