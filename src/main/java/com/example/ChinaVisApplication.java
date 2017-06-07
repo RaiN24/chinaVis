@@ -70,6 +70,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.example.dao.JizhanBitMapDao;
 import com.example.dao.JizhanDao;
 import com.example.dao.MessageDao;
 import com.example.dao.TextDao;
@@ -77,6 +78,7 @@ import com.example.dao.TypeAreaTimeDao;
 import com.example.dao.TypeTimeAreaDao;
 import com.example.domain.CountArea;
 import com.example.domain.Jizhan;
+import com.example.domain.JizhanBitMap;
 import com.example.domain.Message;
 import com.example.domain.MyDate;
 import com.example.domain.News;
@@ -102,6 +104,8 @@ public class ChinaVisApplication {
 	@Autowired
 	private MessageDao messageDao;
 	@Autowired
+	private JizhanBitMapDao jizhanBitMapDao;
+	@Autowired
 	private TypeTimeAreaDao typeTimeAreaDao;
 	@Autowired
 	private TypeAreaTimeDao typeAreaTimeDao;
@@ -122,6 +126,7 @@ public class ChinaVisApplication {
 		ModelAndView mv = new ModelAndView("index");
 		return mv;
 	}
+	
 	
 	@RequestMapping("/getMessagesByJizhan")
 	public String getMessagesByJizhan(@RequestParam("jizhan") int jizhan) {// 李接口1
@@ -345,6 +350,14 @@ public class ChinaVisApplication {
 		}
 		return result.toString();
 	}
+	
+	@RequestMapping("/writeJizhan")
+	public void writeJizhan() {// 静态化李接口1
+		for (int i = 1; i <= 76; i++) {
+			jizhanBitMapDao.insertText(i, getMessagesByJizhan(i));
+		}
+	}
+	
 	@RequestMapping("/writeTypeTimeArea")
 	public void writeTypeTimeArea() {// 静态化李接口2,李接口3
 		String dates[]=new String[]{"2017-2-23","2017-2-24","2017-2-25","2017-2-26","2017-2-27","2017-2-28",
