@@ -31,6 +31,7 @@ import java.util.TreeMap;
 import java.util.stream.Stream;
 
 import com.google.gson.*;
+import com.google.gson.stream.MalformedJsonException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -149,6 +150,8 @@ public class ChinaVisApplication {
 				judge.get(date)[hour]=true;
 			}
 			String area=getAddt(message.getLng(), message.getLat());
+			if(area.length()<=0)
+				continue;
 			if(dayMessage.containsKey(date)){
 				CountArea countArea[][]=dayMessage.get(date);
 				if(countArea[hour][min]==null){
@@ -353,7 +356,7 @@ public class ChinaVisApplication {
 	
 	@RequestMapping("/writeJizhan")
 	public void writeJizhan() {// 静态化李接口1
-		for (int i = 1; i <= 76; i++) {
+		for (int i = 14; i <= 76; i++) {
 			jizhanBitMapDao.insertText(i, getMessagesByJizhan(i));
 		}
 	}
@@ -665,8 +668,14 @@ public class ChinaVisApplication {
 			System.out.println("error in wapaction,and e is " + e.getMessage());
 		}
 		com.google.gson.JsonParser parser = new com.google.gson.JsonParser();
-		JsonObject json = (JsonObject) parser.parse(res);
-		String result=json.get("addrList").getAsJsonArray().get(0).getAsJsonObject().get("admCode").toString();
-		return result.substring(1, result.length()-1);
+		String result="";
+		try {
+			JsonObject json = (JsonObject) parser.parse(res);
+			result=json.get("addrList").getAsJsonArray().get(0).getAsJsonObject().get("admCode").toString();
+			return result.substring(1, result.length()-1);
+		} catch (Exception e) {
+			e.printStackTrace();  
+			return "";
+		}
 	}
 }
