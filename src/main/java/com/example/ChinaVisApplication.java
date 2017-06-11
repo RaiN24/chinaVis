@@ -363,14 +363,8 @@ public class ChinaVisApplication {
 	
 	@RequestMapping("/writeTypeTimeArea")
 	public void writeTypeTimeArea() {// 静态化李接口2,李接口3
-		String dates[]=new String[]{"2017-2-23","2017-2-24","2017-2-25","2017-2-26","2017-2-27","2017-2-28",
-				"2017-3-01","2017-3-02","2017-3-03","2017-3-04","2017-3-05","2017-3-06","2017-3-07","2017-3-08",
-				"2017-3-09","2017-3-10","2017-3-11","2017-3-12","2017-3-13","2017-3-14","2017-3-16",
-				"2017-3-17","2017-3-18","2017-3-19","2017-3-20","2017-3-21","2017-3-22","2017-3-23","2017-3-24",
-				"2017-3-25","2017-3-26","2017-3-27","2017-3-28","2017-3-29","2017-3-30","2017-3-31","2017-4-01",
-				"2017-4-02","2017-4-03","2017-4-04","2017-4-05","2017-4-06","2017-4-07","2017-4-08","2017-4-09",
-				"2017-4-10","2017-4-11","2017-4-12","2017-4-13","2017-4-14","2017-4-15","2017-4-16","2017-4-17",
-				"2017-4-18","2017-4-19","2017-4-20","2017-4-21","2017-4-22","2017-4-23","2017-4-24",
+		String dates[]=new String[]{"2017-3-05",
+				"2017-4-10","2017-4-11","2017-4-23","2017-4-24",
 				"2017-4-25","2017-4-26"};
 //		String dates[]=new String[]{"2017-3-15"};
 		for(String date:dates){
@@ -513,9 +507,9 @@ public class ChinaVisApplication {
 		Timestamp base = new Timestamp(1487779200000L);
 		JsonObject result = new JsonObject();
 		for (int i = start; i <= end; i++) {
-			List<TypeNum> list = messageDao.getTypeMessageByDate(i);
-			JsonObject today = new JsonObject();
 			base.setDate(base.getDate() + i - start);
+			List<TypeNum> list = messageDao.getTypeMessageByDate(base);
+			JsonObject today = new JsonObject();
 			String date = (1900 + base.getYear()) + "-" + (base.getMonth() + 1) + "-" + base.getDate();
 			base.setDate(base.getDate() - i + start);
 			int total = 0;
