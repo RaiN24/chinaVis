@@ -10,6 +10,9 @@ public class Message {
 	private Timestamp recitime;
 	private double lng;
 	private double lat;
+	public Message(){
+		
+	}
 	public Message(String md5,String phone,Timestamp conntime,Timestamp recitime,double lng,double lat) {
 		this.md5=md5;
 		this.phone=phone;
