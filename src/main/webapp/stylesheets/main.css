@@ -1,0 +1,50 @@
+body {
+	color: #ddd;
+	background-color: rgba(56, 56, 56, 0.96);
+}
+.nav-button-list {
+	margin-top: 10px;
+	margin-left: 20px;
+	font-size: 17px;
+}
+.nav-margin-bottom {
+	margin-bottom: 3px;
+}
+.block-div {
+	height: 100%;
+	background-color: #222;
+	border-radius: 7px;
+	border-bottom: 1px solid #000000;
+    box-shadow: #222222 1px 2px 5px;
+}
+
+#left-div {
+	float: left;
+	width: 60%;
+	height: 100%;
+	padding: 2px;
+}
+#right-div {
+	float: right;
+	width: 40%;
+	height: 100%;
+}
+#right-top-div {
+	width: 100%;
+	height: 30%;
+	padding: 2px;
+}
+#right-bottom-div {
+	width: 100%;
+	height: 70%;
+}
+#right-bottom-top-div {
+	width: 100%;
+	height: 50%;
+	padding: 2px;
+}
+#right-bottom-bottom-div {
+	width: 100%;
+	height: 50%;
+	padding: 2px;
+}
