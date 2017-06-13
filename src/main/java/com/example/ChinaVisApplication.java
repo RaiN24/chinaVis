@@ -84,6 +84,7 @@ import com.example.domain.Message;
 import com.example.domain.MyDate;
 import com.example.domain.News;
 import com.example.domain.Pos;
+import com.example.domain.Send;
 import com.example.domain.Text;
 import com.example.domain.TypeNum;
 import com.example.domain.TypeTimeArea;
@@ -326,7 +327,7 @@ public class ChinaVisApplication {
 			List<Message> jizhanMessage = messageDao.getMessagesByJizhanAndDate(i, timestamp);
 			JsonObject jizhanActionAndSend=new JsonObject();
 			JsonArray jizhanAction = new JsonArray();
-			Map<Timestamp,Integer> rtime=new HashMap<>();
+			List<Send> list=new LinkedList<>();
 			for (Message message : jizhanMessage) {
 				JsonObject oneAction = new JsonObject();
 				Timestamp ctime = message.getConntime();
@@ -336,16 +337,19 @@ public class ChinaVisApplication {
 				oneAction.addProperty("conntime", conntime);
 				oneAction.addProperty("lng", message.getLng());
 				oneAction.addProperty("lat", message.getLat());
-				rtime.put(message.getRecitime(),textDao.getType(message.getMd5()));
+				Send send=new Send();
+				send.setTime(message.getRecitime());
+				send.setType(textDao.getType(message.getMd5()));
+				list.add(send);
 				jizhanAction.add(oneAction);
 			}
 			jizhanActionAndSend.add("action", jizhanAction);
 			JsonArray jizhanSend=new JsonArray();
-			for(Map.Entry<Timestamp, Integer> set:rtime.entrySet()){
+			for(Send set:list){
 				JsonObject oneSend=new JsonObject();
-				int index = set.getKey().toLocaleString().indexOf(" ");
-				oneSend.addProperty("time", set.getKey().toLocaleString().substring(index + 1));
-				oneSend.addProperty("type", set.getValue());
+				int index = set.getTime().toLocaleString().indexOf(" ");
+				oneSend.addProperty("time", set.getTime().toLocaleString().substring(index + 1));
+				oneSend.addProperty("type", set.getType());
 				jizhanSend.add(oneSend);
 			}
 			jizhanActionAndSend.add("send", jizhanSend);
