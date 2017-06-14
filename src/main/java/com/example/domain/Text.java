@@ -3,6 +3,13 @@ package com.example.domain;
 public class Text {
 	private String md5;
 	private String content;
+	private int type;
+	public int getType() {
+		return type;
+	}
+	public void setType(int type) {
+		this.type = type;
+	}
 	public String getContent() {
 		return content;
 	}

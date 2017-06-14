@@ -101,6 +101,7 @@ public class ChinaVisApplication {
 	SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
 	static MyDate early;
 	static MyDate late;
+	static Map<String, Integer> md5Type=new HashMap<>();
 	@Autowired
 	private MessageService messageService;
 	@Autowired
@@ -303,7 +304,7 @@ public class ChinaVisApplication {
 		}
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		// Map<MyTimestamp, Integer> dayMessage=new HashMap<>();
 		// dayMessage.put(new MyTimestamp(1487817332000L), 1);
 		// dayMessage.put(new MyTimestamp(1487844263000L), 1);
@@ -316,6 +317,12 @@ public class ChinaVisApplication {
 
 	@RequestMapping("/getActionByDate")
 	public String getActionByDate(@RequestParam("date") String date) {// 张接口2
+		if(md5Type.size()<=0){//几乎不占用时间
+			List<Text> textList=textDao.selectAll();
+			for(Text text:textList){
+				md5Type.put(text.getMd5(), text.getType());
+			}
+		}
 		JsonObject result = new JsonObject();
 		int start = 1, end = 77;
 		for (int i = start; i <= end; i++) {
@@ -324,7 +331,7 @@ public class ChinaVisApplication {
 			int month = Integer.parseInt(time[1]);
 			int day = Integer.parseInt(time[2]);
 			Timestamp timestamp = new Timestamp(year - 1900, month - 1, day, 0, 0, 0, 0);
-			List<Message> jizhanMessage = messageDao.getMessagesByJizhanAndDate(i, timestamp);
+			List<Message> jizhanMessage = messageDao.getMessagesByJizhanAndDate(i, timestamp);//单次占用3s
 			JsonObject jizhanActionAndSend=new JsonObject();
 			JsonArray jizhanAction = new JsonArray();
 			List<Send> list=new LinkedList<>();
@@ -339,7 +346,8 @@ public class ChinaVisApplication {
 				oneAction.addProperty("lat", message.getLat());
 				Send send=new Send();
 				send.setTime(message.getRecitime());
-				send.setType(textDao.getType(message.getMd5()));
+//				send.setType(textDao.getType(message.getMd5()));//一共占用20s
+				send.setType(md5Type.get(message.getMd5()));//读入内存基本不占用时间
 				list.add(send);
 				jizhanAction.add(oneAction);
 			}
