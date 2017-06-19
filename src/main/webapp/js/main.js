@@ -13,4 +13,6 @@ $(document).ready(function() {
 
 function viewInitialize() {
 	spatialTemporalGraph.initialize("spatial-temporal-view");
+	mailOverviewGraph.initialize();
+	baseStationOverview.initialize();
 }

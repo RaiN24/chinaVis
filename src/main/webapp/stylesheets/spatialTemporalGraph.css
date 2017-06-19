@@ -54,3 +54,16 @@
   color: #fff;
   border-radius: 2px;
 }
+.mouseoverBarInTotal {
+	fill: #353535;
+}
+.selectedBarInTotal {
+	fill: #292929 !important;
+}
+.addedRect {
+	stroke: #222222;
+    stroke-width: 1;
+}
+.lowOpacityBar {
+	opacity: 0.3 !important;
+}
