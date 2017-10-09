@@ -1,0 +1,69 @@
+#spatialDiv {
+	width: 100%;
+	height: 65%;
+	border: 1px solid #2b2b2b;
+}
+#twoTimelineDiv {
+	width: 100%;
+	height: 35%;
+}
+#dayTimelineDiv {
+	height: 50%;
+	width: 100%;
+	border-bottom: 1px solid #373737;
+}
+#dayTimelineDiv-label {
+	height: 15%;
+	width: 100%;
+	color: #b3b3b3;
+}
+#dayTimelineDiv-svg {
+	height: 85%;
+	width: 100%;
+}
+#totalTimelineDiv {
+	height: 50%;
+	width: 100%;
+}
+#totalTimelineDiv-label {
+	height: 15%;
+	width: 100%;
+	color: #b3b3b3;
+}
+#totalTimelineDiv-svg {
+	height: 85%;
+	width: 100%;
+}
+.label {
+	color: white;
+}
+.totalTimelineBar {
+	fill: #606060;
+	stroke: #222222;
+    stroke-width: 1;
+}
+.TimelineBarByDate {
+	fill: #606060;
+	stroke: #222222;
+    stroke-width: 1;
+}
+.d3-tip {
+  line-height: 1;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+.mouseoverBarInTotal {
+	fill: #353535;
+}
+.selectedBarInTotal {
+	fill: #292929 !important;
+}
+.addedRect {
+	stroke: #222222;
+    stroke-width: 1;
+}
+.lowOpacityBar {
+	opacity: 0.3 !important;
+}
